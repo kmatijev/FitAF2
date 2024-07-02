@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +36,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import com.google.android.material.circularreveal.CircularRevealGridLayout
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
@@ -52,6 +56,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
 @Composable
 fun MyApp() {
     val navController = rememberNavController()
@@ -60,6 +65,39 @@ fun MyApp() {
         composable("register") { RegisterPage(navController) }
         composable("routines") { RoutinesPage(navController) }
         composable("workout") { WorkoutPage(navController) }
+        composable(
+            "routine/{routineId}",
+            arguments = listOf(navArgument("routineId"
+            ) { type = NavType.StringType }
+        )
+        ) {
+            var routine by remember { mutableStateOf<Routine?>(null) }
+            LaunchedEffect(Unit) {
+                FirebaseFirestore
+                    .getInstance()
+                    .collection("routines")
+                    .document(it.arguments!!.getString("routineId")!!)
+                    .get()
+                    .addOnSuccessListener {
+                        routine = it.toObject(Routine::class.java);
+                    }
+            }
+
+            RoutinePage(
+                navController,
+                routine,
+                onExerciseAdd = { exercise ->
+                    val currRoutine = routine ?: return@RoutinePage
+                    val newRoutine = currRoutine.copy(exercises = currRoutine.exercises.toMutableList().apply { add(exercise) }.toList())
+                    FirebaseFirestore
+                        .getInstance()
+                        .collection("routines")
+                        .document(currRoutine.id)
+                        .set(newRoutine)
+                        .addOnSuccessListener { routine = newRoutine }
+                }
+            )
+        }
         //composable("tracking/{routineId}") { backStackEntry ->
         //    val routineId = backStackEntry.arguments?.getString("routineId") ?: ""
         //    WorkoutTrackingPage(navController, routineId)
@@ -389,6 +427,7 @@ fun RoutinesPage(navController: NavHostController) {
             items(routines) { routine ->
                 RoutineItem(
                     routine = routine,
+                    onClick = { navController.navigate("routine/${routine.id}") },
                     onEdit = {
                         routineToEdit = it
                         showEditDialog = true
@@ -515,6 +554,7 @@ fun addRoutine(routine: Routine, onSuccess: (Routine) -> Unit, onFailure: (Excep
 @Composable
 fun RoutineItem(
     routine: Routine,
+    onClick: () -> Unit,
     onEdit: (Routine) -> Unit,
     onDelete: (Routine) -> Unit
 ) {
@@ -524,6 +564,7 @@ fun RoutineItem(
             .padding(8.dp)
             .background(Color.LightGray, RoundedCornerShape(8.dp))
             .padding(16.dp)
+            .clickable { onClick() }
     ) {
         Text(text = routine.name, style = MaterialTheme.typography.headlineLarge)
         Spacer(modifier = Modifier.height(8.dp))
