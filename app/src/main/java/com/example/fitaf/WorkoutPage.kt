@@ -9,7 +9,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.AddCircle
+import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,7 +42,7 @@ fun WorkoutPage(navController: NavHostController) {
         )
         AppButton(
             label = "Log a workout",
-            icon = Icons.Outlined.AddCircle,
+            icon = Icons.Filled.PlayArrow,
             onClick = { navController.navigate("routine_picker") },
         )
         Spacer(modifier = Modifier.height(32.dp))
@@ -48,8 +52,8 @@ fun WorkoutPage(navController: NavHostController) {
             modifier = Modifier.padding(bottom = 8.dp)
         )
         AppButton(
-            label = "Create routine",
-            icon = Icons.Outlined.AddCircle,
+            label = "Manage routines",
+            icon = Icons.Filled.Refresh,
             onClick = { navController.navigate("routines") },
         )
         Spacer(modifier = Modifier.height(32.dp))
