@@ -468,6 +468,7 @@ fun CreateRoutineDialog(
 private fun getAllRoutines(onSuccess: (List<Routine>) -> Unit) {
     val db = FirebaseFirestore.getInstance()
     db.collection("routines")
+        .whereEqualTo("userId", requireUserId())
         .get()
         .addOnSuccessListener { result ->
             onSuccess(result.documents.map { it.toObject(Routine::class.java)!! })
@@ -595,6 +596,7 @@ fun AddRoutineDialog(
         confirmButton = {
             Button(onClick = {
                 val newRoutine = Routine(
+                    userId = requireUserId(),
                     id = UUID.randomUUID().toString(),
                     name = name,
                     description = description,
@@ -612,6 +614,8 @@ fun AddRoutineDialog(
         }
     )
 }
+
+fun requireUserId() = Firebase.auth.currentUser!!.uid
 
 fun addRoutine(routine: Routine, onSuccess: (Routine) -> Unit, onFailure: (Exception) -> Unit) {
     val db = FirebaseFirestore.getInstance()
@@ -710,18 +714,15 @@ fun EditRoutineDialog(
                     onValueChange = { description = it },
                     label = { Text("Description") }
                 )
-                exercises.forEachIndexed { index, exercise ->
-                    TextField(
-                        value = exercise.name,
-                        onValueChange = { newName -> exercises[index] = exercises[index].copy(name = newName) },
-                        label = { Text("Exercise Name") }
-                    )
-                }
             }
         },
         confirmButton = {
             Button(onClick = {
-                val updatedRoutine = Routine(routine.id, name, description, exercises.toList())
+                val updatedRoutine = routine.copy(
+                    name = name,
+                    description = description,
+                    exercises = exercises,
+                )
                 onSave(updatedRoutine)
             }) {
                 Text("Save")
