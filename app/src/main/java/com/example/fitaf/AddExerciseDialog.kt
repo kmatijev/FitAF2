@@ -61,13 +61,13 @@ fun AddExerciseDialog(
                     name = name,
                     sets = sets.toInt(),
                     reps = reps.toInt(),
-                    weight = weight.toFloat(),
+                    weight = weight.toInt(),
                 )
                     ?: Exercise(
                         name = name,
                         sets = sets.toInt(),
                         reps = reps.toInt(),
-                        weight = weight.toFloat()
+                        weight = weight.toInt()
                     )
                 onSave(newExercise)
                 onDismiss()

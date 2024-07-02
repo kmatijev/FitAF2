@@ -2,7 +2,6 @@ package com.example.fitaf
 
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -10,9 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,14 +29,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.navigation.NavType
-import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
-import com.google.android.material.circularreveal.CircularRevealGridLayout
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
@@ -103,9 +96,11 @@ fun MyApp() {
             "routine_logger/{routineId}",
             arguments = listOf(navArgument("routineId") { type = NavType.StringType })
         ) {
+            var startingRoutine by remember { mutableStateOf<Routine?>(null) }
             var routine by remember { mutableStateOf<Routine?>(null) }
             LaunchedEffect(Unit) {
                 getRoutine(it.arguments!!.getString("routineId")!!) {
+                    startingRoutine = it
                     routine = it
                 }
             }
@@ -125,9 +120,29 @@ fun MyApp() {
                     }
                 },
                 onRoutineSave = {
-                    val localRoutine = routine
-                    if (localRoutine != null) {
-                        editRoutine(localRoutine) {
+                    val localEditedRoutine = routine
+                    val localStartingRoutine = startingRoutine
+
+                    if (localEditedRoutine != null && localStartingRoutine != null ) {
+                        val editedExercises = localEditedRoutine.exercises
+                        val adjustedRoutine = localStartingRoutine.copy(
+                            exercises = localStartingRoutine.exercises.mapIndexed { idx, startingExercise ->
+                                val startingToEditedExerciseData = mapOf(
+                                    startingExercise.sets to editedExercises[idx].sets,
+                                    startingExercise.reps to editedExercises[idx].reps,
+                                    startingExercise.weight to editedExercises[idx].weight
+                                )
+                                val bumpFactor = if (startingToEditedExerciseData.all { it.key == it.value }) {
+                                    1.1
+                                } else if (startingToEditedExerciseData.any { it.key < it.value }) {
+                                    1.2
+                                } else {
+                                    0.9
+                                }
+                                startingExercise.copy(weight = (startingExercise.weight * bumpFactor).toInt())
+                            }
+                        )
+                        editRoutine(adjustedRoutine) {
                             navController.popBackStack(route = "workout", inclusive = false)
                         }
                     }
