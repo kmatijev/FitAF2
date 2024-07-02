@@ -172,3 +172,50 @@ fun AddRoutineDialog(
         }
     )
 }
+
+@Composable
+fun EditRoutineDialog(
+    routine: Routine,
+    onDismiss: () -> Unit,
+    onSave: (Routine) -> Unit
+) {
+    var name by remember { mutableStateOf(routine.name) }
+    var description by remember { mutableStateOf(routine.description) }
+    val exercises = remember { mutableStateListOf(*routine.exercises.toTypedArray()) }
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = { Text("Edit Routine") },
+        text = {
+            Column {
+                TextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Routine Name") }
+                )
+                TextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") }
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                val updatedRoutine = routine.copy(
+                    name = name,
+                    description = description,
+                    exercises = exercises,
+                )
+                onSave(updatedRoutine)
+            }) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            Button(onClick = { onDismiss() }) {
+                Text("Cancel")
+            }
+        }
+    )
+}
