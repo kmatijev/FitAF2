@@ -16,7 +16,7 @@ fun LogWorkoutRoutinePickerPage(
 ) {
     Scaffold { contentPadding ->
         Column {
-            AppBar(title = "Pick workout to log")
+            AppBar(title = "Pick routine")
             if (routines == null) {
                 Text("Loading...")
                 return@Scaffold
