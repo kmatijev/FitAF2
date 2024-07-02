@@ -27,7 +27,7 @@ fun AddExerciseDialog(
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        title = { Text("Add Routine") },
+        title = { Text("${if (initialData != null) "Edit" else "Add"} Exercise") },
         text = {
             Column {
                 TextField(

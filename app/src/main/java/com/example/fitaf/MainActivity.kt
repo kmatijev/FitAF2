@@ -5,10 +5,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -25,23 +22,16 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ExitToApp
-import androidx.compose.material.icons.outlined.AddCircle
-import androidx.compose.material.icons.outlined.ExitToApp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
-import java.util.UUID
-
 
 
 class MainActivity : ComponentActivity() {
@@ -73,11 +63,11 @@ fun MyApp() {
                 }
             }
 
-            RoutinePage(
+            RoutineAddExercisesPage(
                 navController,
                 routine,
                 onExerciseAdd = { exercise ->
-                    val currRoutine = routine ?: return@RoutinePage
+                    val currRoutine = routine ?: return@RoutineAddExercisesPage
                     val newRoutine = currRoutine.copy(exercises = currRoutine.exercises.toMutableList().apply { add(exercise) }.toList())
                     editRoutine(newRoutine) { routine = newRoutine }
                 }
@@ -465,7 +455,7 @@ fun CreateRoutineDialog(
     )
 }
 
-private fun getAllRoutines(onSuccess: (List<Routine>) -> Unit) {
+fun getAllRoutines(onSuccess: (List<Routine>) -> Unit) {
     val db = FirebaseFirestore.getInstance()
     db.collection("routines")
         .whereEqualTo("userId", requireUserId())
@@ -473,146 +463,6 @@ private fun getAllRoutines(onSuccess: (List<Routine>) -> Unit) {
         .addOnSuccessListener { result ->
             onSuccess(result.documents.map { it.toObject(Routine::class.java)!! })
         }
-}
-
-@Composable
-fun RoutinesPage(navController: NavHostController) {
-    val routines = remember { mutableStateListOf<Routine>() }
-    var showEditDialog by remember { mutableStateOf(false) }
-    var showAddDialog by remember { mutableStateOf(false) }
-    var routineToEdit by remember { mutableStateOf<Routine?>(null) }
-
-    LaunchedEffect(Unit) {
-        getAllRoutines { routines.addAll(it)  }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
-    ) {
-        Text(text = "Routines", style = MaterialTheme.typography.headlineLarge)
-
-        LazyColumn {
-            items(routines) { routine ->
-                RoutineItem(
-                    routine = routine,
-                    onClick = { navController.navigate("routine/${routine.id}") },
-                    onEdit = {
-                        routineToEdit = it
-                        showEditDialog = true
-                    },
-                    onDelete = {
-                        deleteRoutine(it.id, {
-                            routines.remove(it)
-                        }, { e -> Log.e("RoutinesPage", "Error deleting routine", e) })
-                    }
-                )
-            }
-        }
-
-        Button(
-            onClick = { showAddDialog = true },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .background(color = Color(0xFF85C3F2), shape = RoundedCornerShape(8.dp)),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF85C3F2))
-        ) {
-            Text(text = "Add Routine", color = Color.White)
-            Spacer(modifier = Modifier.width(8.dp))
-            Icon(
-                Icons.Outlined.AddCircle,
-                contentDescription = "Add"
-            )
-        }
-    }
-
-    if (showEditDialog && routineToEdit != null) {
-        EditRoutineDialog(
-            routine = routineToEdit!!,
-            onDismiss = { showEditDialog = false },
-            onSave = { updatedRoutine ->
-                routineToEdit?.let { originalRoutine ->
-                    val index = routines.indexOf(originalRoutine)
-                    if (index >= 0) {
-                        routines[index] = updatedRoutine
-                        updateRoutine(updatedRoutine)
-                    }
-                }
-                showEditDialog = false
-            }
-        )
-    }
-
-    if (showAddDialog) {
-        AddRoutineDialog(
-            onDismiss = { showAddDialog = false },
-            onSave = { newRoutine ->
-                addRoutine(newRoutine, {
-                    routines.add(it)
-                }, { e -> Log.e("RoutinesPage", "Error adding routine", e) })
-                showAddDialog = false
-            }
-        )
-    }
-}
-
-@Composable
-fun AddRoutineDialog(
-    onDismiss: () -> Unit,
-    onSave: (Routine) -> Unit
-) {
-    var name by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    val exercises = remember { mutableStateListOf<Exercise>() }
-
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        title = { Text("Add Routine") },
-        text = {
-            Column {
-                TextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Routine Name") }
-                )
-                TextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Description") }
-                )
-                exercises.forEachIndexed { index, exercise ->
-                    TextField(
-                        value = exercise.name,
-                        onValueChange = { newName -> exercises[index] = exercises[index].copy(name = newName) },
-                        label = { Text("Exercise Name") }
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            Button(onClick = {
-                val newRoutine = Routine(
-                    userId = requireUserId(),
-                    id = UUID.randomUUID().toString(),
-                    name = name,
-                    description = description,
-                    exercises = exercises.toList()
-                )
-                onSave(newRoutine)
-            }) {
-                Text("Save")
-            }
-        },
-        dismissButton = {
-            Button(onClick = { onDismiss() }) {
-                Text("Cancel")
-            }
-        }
-    )
 }
 
 fun requireUserId() = Firebase.auth.currentUser!!.uid
@@ -624,48 +474,6 @@ fun addRoutine(routine: Routine, onSuccess: (Routine) -> Unit, onFailure: (Excep
         .set(routine)
         .addOnSuccessListener { onSuccess(routine) }
         .addOnFailureListener { e -> onFailure(e) }
-}
-
-@Composable
-fun RoutineItem(
-    routine: Routine,
-    onClick: () -> Unit,
-    onEdit: (Routine) -> Unit,
-    onDelete: (Routine) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .background(Color.LightGray, RoundedCornerShape(8.dp))
-            .padding(16.dp)
-            .clickable { onClick() }
-    ) {
-        Text(text = routine.name, style = MaterialTheme.typography.headlineLarge)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = routine.description, style = MaterialTheme.typography.bodyMedium)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        routine.exercises.forEach { exercise ->
-            Text(
-                text = "Exercise: ${exercise.name} ${exercise.sets}x${exercise.reps}x${exercise.weight}kg",
-                style = MaterialTheme.typography.bodySmall,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
-        ) {
-            IconButton(onClick = { onEdit(routine) }) {
-                Icon(ImageVector.vectorResource(id = R.drawable.edit), contentDescription = "Edit Routine")
-            }
-            IconButton(onClick = { onDelete(routine) }) {
-                Icon(ImageVector.vectorResource(id = R.drawable.delete), contentDescription = "Delete Routine")
-            }
-        }
-    }
 }
 
 fun deleteRoutine(routineId: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {

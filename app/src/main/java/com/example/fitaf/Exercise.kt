@@ -10,6 +10,6 @@ data class Exercise(
     var weight: Int = 0
 ) {
     override fun toString(): String {
-        return "$name - $sets x $reps x $weight kg"
+        return "$sets x $reps x $weight kg"
     }
 }
