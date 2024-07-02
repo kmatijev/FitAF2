@@ -68,20 +68,13 @@ fun MyApp() {
         composable("workout") { WorkoutPage(navController) }
         composable(
             "routine/{routineId}",
-            arguments = listOf(navArgument("routineId"
-            ) { type = NavType.StringType }
-        )
+            arguments = listOf(navArgument("routineId") { type = NavType.StringType })
         ) {
             var routine by remember { mutableStateOf<Routine?>(null) }
             LaunchedEffect(Unit) {
-                FirebaseFirestore
-                    .getInstance()
-                    .collection("routines")
-                    .document(it.arguments!!.getString("routineId")!!)
-                    .get()
-                    .addOnSuccessListener {
-                        routine = it.toObject(Routine::class.java);
-                    }
+                getRoutine(it.arguments!!.getString("routineId")!!) {
+                    routine = it
+                }
             }
 
             RoutinePage(
@@ -90,12 +83,7 @@ fun MyApp() {
                 onExerciseAdd = { exercise ->
                     val currRoutine = routine ?: return@RoutinePage
                     val newRoutine = currRoutine.copy(exercises = currRoutine.exercises.toMutableList().apply { add(exercise) }.toList())
-                    FirebaseFirestore
-                        .getInstance()
-                        .collection("routines")
-                        .document(currRoutine.id)
-                        .set(newRoutine)
-                        .addOnSuccessListener { routine = newRoutine }
+                    editRoutine(newRoutine) { routine = newRoutine }
                 }
             )
         }
@@ -111,11 +99,64 @@ fun MyApp() {
                 }
             )
         }
+        composable(
+            "routine_logger/{routineId}",
+            arguments = listOf(navArgument("routineId") { type = NavType.StringType })
+        ) {
+            var routine by remember { mutableStateOf<Routine?>(null) }
+            LaunchedEffect(Unit) {
+                getRoutine(it.arguments!!.getString("routineId")!!) {
+                    routine = it
+                }
+            }
+            RoutineLoggerPage(
+                routine = routine,
+                onExerciseSave = { newExercise ->
+                    val localRoutine = routine;
+                    if (localRoutine != null) {
+                        routine = localRoutine.copy(
+                            exercises = localRoutine.exercises.toMutableList().apply {
+                                replaceAll {
+                                    if (it.id == newExercise.id) newExercise
+                                    else it
+                                }
+                            }
+                        )
+                    }
+                },
+                onRoutineSave = {
+                    val localRoutine = routine
+                    if (localRoutine != null) {
+                        editRoutine(localRoutine) {
+                            navController.popBackStack(route = "workout", inclusive = false)
+                        }
+                    }
+                }
+            )
+        }
         //composable("tracking/{routineId}") { backStackEntry ->
         //    val routineId = backStackEntry.arguments?.getString("routineId") ?: ""
         //    WorkoutTrackingPage(navController, routineId)
         //}
     }
+}
+
+private fun getRoutine(id: String, onSuccess: (Routine) -> Unit) {
+    FirebaseFirestore
+        .getInstance()
+        .collection("routines")
+        .document(id)
+        .get()
+        .addOnSuccessListener { onSuccess(it.toObject(Routine::class.java)!!); }
+}
+
+private fun editRoutine(routine: Routine, onSuccess: () -> Unit) {
+    FirebaseFirestore
+        .getInstance()
+        .collection("routines")
+        .document(routine.id)
+        .set(routine)
+        .addOnSuccessListener { onSuccess() }
 }
 
 @Composable

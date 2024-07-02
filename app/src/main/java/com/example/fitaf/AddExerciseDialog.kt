@@ -17,12 +17,13 @@ import java.util.UUID
 @Composable
 fun AddExerciseDialog(
     onDismiss: () -> Unit,
-    onSave: (Exercise) -> Unit
+    onSave: (Exercise) -> Unit,
+    initialData: Exercise? = null,
 ) {
-    var name by remember { mutableStateOf("") }
-    var sets by remember { mutableStateOf("") }
-    var reps by remember { mutableStateOf("") }
-    var weight by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(initialData?.name ?: "") }
+    var sets by remember { mutableStateOf(initialData?.sets?.toString() ?: "") }
+    var reps by remember { mutableStateOf(initialData?.reps?.toString() ?: "") }
+    var weight by remember { mutableStateOf(initialData?.weight?.toString() ?: "") }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
@@ -56,13 +57,18 @@ fun AddExerciseDialog(
         },
         confirmButton = {
             Button(onClick = {
-                val newExercise = Exercise(
-                    id = UUID.randomUUID().toString(),
+                val newExercise = initialData?.copy(
                     name = name,
                     sets = sets.toInt(),
                     reps = reps.toInt(),
-                    weight = weight.toFloat()
+                    weight = weight.toFloat(),
                 )
+                    ?: Exercise(
+                        name = name,
+                        sets = sets.toInt(),
+                        reps = reps.toInt(),
+                        weight = weight.toFloat()
+                    )
                 onSave(newExercise)
                 onDismiss()
             }) {
