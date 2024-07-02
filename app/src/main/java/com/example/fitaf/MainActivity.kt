@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.google.firebase.Firebase
@@ -54,7 +55,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MyApp() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = if (Firebase.auth.currentUser == null) "login" else "workout") {
+    NavHost(navController = navController, route = "app", startDestination = if (Firebase.auth.currentUser == null) "login" else "workout") {
         composable("login") { LoginPage(navController) }
         composable("register") { RegisterPage(navController) }
         composable("routines") { RoutinesPage(navController) }
@@ -848,10 +849,6 @@ fun ExerciseManagementPage(
 
 @Composable
 fun WorkoutPage(navController: NavHostController) {
-    // Hardcoded list of routines for demonstration
-    val routines = listOf("Routine 1", "Routine 2", "Routine 3", "Routine 4")
-    var selectedRoutine by remember { mutableStateOf("") }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -867,7 +864,6 @@ fun WorkoutPage(navController: NavHostController) {
             style = MaterialTheme.typography.headlineLarge,
             modifier = Modifier.padding(16.dp)
         )
-
         HorizontalDivider(
             modifier = Modifier
                 .fillMaxWidth()
@@ -921,5 +917,19 @@ fun WorkoutPage(navController: NavHostController) {
                 contentDescription = "Add"
             )
         }
+
+        Button(onClick = {
+            Firebase.auth.signOut()
+            navController.popBackStack(navController.graph.startDestinationId, inclusive = true)
+            navController.navigate("login") {
+                launchSingleTop = true
+                restoreState = true
+                popUpTo(navController.graph.startDestinationId) {
+                    saveState = true
+                }
+            }
+        }) {
+            Text("Log out")
+        }
     }
-    }
+}
