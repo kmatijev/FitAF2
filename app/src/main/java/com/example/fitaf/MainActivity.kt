@@ -26,7 +26,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.outlined.AddCircle
+import androidx.compose.material.icons.outlined.ExitToApp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -878,21 +880,11 @@ fun WorkoutPage(navController: NavHostController) {
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        Button(
+        AppButton(
+            label = "Log a workout",
+            icon = Icons.Outlined.AddCircle,
             onClick = { navController.navigate("routine_picker") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .background(color = Color(0xFF85C3F2), shape = RoundedCornerShape(8.dp)),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF85C3F2))
-        ) {
-            Text(text = "Log a workout", color = Color.White)
-            Spacer(modifier = Modifier.width(8.dp))
-            Icon(
-                Icons.Outlined.AddCircle,
-                contentDescription = "Add"
-            )
-        }
+        )
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -902,34 +894,34 @@ fun WorkoutPage(navController: NavHostController) {
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        Button(
+        AppButton(
+            label = "Create routine",
+            icon = Icons.Outlined.AddCircle,
             onClick = { navController.navigate("routines") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .background(color = Color(0xFF85C3F2), shape = RoundedCornerShape(8.dp)),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF85C3F2))
-        ) {
-            Text(text = "Create routine", color = Color.White)
-            Spacer(modifier = Modifier.width(8.dp))
-            Icon(
-                Icons.Outlined.AddCircle,
-                contentDescription = "Add"
-            )
-        }
+        )
 
-        Button(onClick = {
-            Firebase.auth.signOut()
-            navController.popBackStack(navController.graph.startDestinationId, inclusive = true)
-            navController.navigate("login") {
-                launchSingleTop = true
-                restoreState = true
-                popUpTo(navController.graph.startDestinationId) {
-                    saveState = true
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Text(
+            text = "${Firebase.auth.currentUser?.email}:",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        AppButton(
+            label = "Log out",
+            icon = Icons.AutoMirrored.Outlined.ExitToApp,
+            onClick = {
+                Firebase.auth.signOut()
+                navController.popBackStack(navController.graph.startDestinationId, inclusive = true)
+                navController.navigate("login") {
+                    launchSingleTop = true
+                    restoreState = true
+                    popUpTo(navController.graph.startDestinationId) {
+                        saveState = true
+                    }
                 }
-            }
-        }) {
-            Text("Log out")
-        }
+            },
+        )
     }
 }
