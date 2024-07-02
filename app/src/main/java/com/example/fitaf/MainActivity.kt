@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.navigation.NavType
+import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
 import com.google.android.material.circularreveal.CircularRevealGridLayout
 import com.google.firebase.Firebase
@@ -60,7 +61,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MyApp() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = if (Firebase.auth.currentUser == null) "login" else "routines") {
+    NavHost(navController = navController, startDestination = if (Firebase.auth.currentUser == null) "login" else "workout") {
         composable("login") { LoginPage(navController) }
         composable("register") { RegisterPage(navController) }
         composable("routines") { RoutinesPage(navController) }
@@ -95,6 +96,18 @@ fun MyApp() {
                         .document(currRoutine.id)
                         .set(newRoutine)
                         .addOnSuccessListener { routine = newRoutine }
+                }
+            )
+        }
+        composable("routine_picker") {
+            var routines by remember { mutableStateOf<List<Routine>?>(null) }
+            LaunchedEffect(Unit) {
+                getAllRoutines { routines = it }
+            }
+            LogWorkoutRoutinePickerPage(
+                routines = routines,
+                onRoutineClick = {
+                    navController.navigate("routine_logger/${it.id}")
                 }
             )
         }
@@ -393,6 +406,15 @@ fun CreateRoutineDialog(
     )
 }
 
+private fun getAllRoutines(onSuccess: (List<Routine>) -> Unit) {
+    val db = FirebaseFirestore.getInstance()
+    db.collection("routines")
+        .get()
+        .addOnSuccessListener { result ->
+            onSuccess(result.documents.map { it.toObject(Routine::class.java)!! })
+        }
+}
+
 @Composable
 fun RoutinesPage(navController: NavHostController) {
     val routines = remember { mutableStateListOf<Routine>() }
@@ -400,18 +422,8 @@ fun RoutinesPage(navController: NavHostController) {
     var showAddDialog by remember { mutableStateOf(false) }
     var routineToEdit by remember { mutableStateOf<Routine?>(null) }
 
-    // Fetch routines from Firestore
     LaunchedEffect(Unit) {
-        val db = FirebaseFirestore.getInstance()
-        db.collection("routines")
-            .get()
-            .addOnSuccessListener { result ->
-                routines.clear()
-                for (document in result) {
-                    val routine = document.toObject(Routine::class.java)
-                    routines.add(routine)
-                }
-            }
+        getAllRoutines { routines.addAll(it)  }
     }
 
     Column(
@@ -782,8 +794,6 @@ fun ExerciseManagementPage(
 fun WorkoutPage(navController: NavHostController) {
     // Hardcoded list of routines for demonstration
     val routines = listOf("Routine 1", "Routine 2", "Routine 3", "Routine 4")
-
-    var showDialog by remember { mutableStateOf(false) }
     var selectedRoutine by remember { mutableStateOf("") }
 
     Column(
@@ -817,7 +827,7 @@ fun WorkoutPage(navController: NavHostController) {
         )
 
         Button(
-            onClick = { showDialog = true },
+            onClick = { navController.navigate("routine_picker") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
@@ -856,26 +866,4 @@ fun WorkoutPage(navController: NavHostController) {
             )
         }
     }
-
-    if (showDialog) {
-                Column {
-                    routines.forEach { routine ->
-                        Button(
-                            onClick = {
-                                selectedRoutine = routine
-                                showDialog = false
-                                // Navigate to the tracking page with selectedRoutine data
-                                navController.navigate("RoutineDetailPage/$selectedRoutine")
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                                .background(color = Color.White),
-                            colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
-                        ) {
-                            Text(text = routine)
-                        }
-                    }
-                }
-            }
     }
