@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "379648629888",
+    "project_id": "fitaf-1bd2a",
+    "storage_bucket": "fitaf-1bd2a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:379648629888:android:5caf185ad131b94eaa9a65",
+        "android_client_info": {
+          "package_name": "com.example.fitaf"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBye_EUsqR-sil0t986uqW_Wld45iOPWF8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
